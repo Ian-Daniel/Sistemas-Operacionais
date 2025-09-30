@@ -24,14 +24,16 @@ As implementações seguem rigorosamente as orientações do professor:
 ## Estrutura do repositório
 
 ```
-├── Auxiliar.cpp # Gera matrizes aleatórias M1 e M2 e salva em arquivos
-├── Sequencial.cpp # Multiplicação de matrizes de forma sequencial
-├── ParaleloThreads.cpp # Multiplicação de matrizes usando pthreads
-├── ParaleloProcessos.cpp # Multiplicação de matrizes usando processos
-├── headers/ # Arquivos de cabeçalho (.h) se necessário
-├── Makefile # Script para compilar todos os programas
-├── resultados/ # Pasta para armazenar arquivos de saída e tempos de execução
-└── README.md # Este arquivo
+├── src/                  # Códigos-fonte .cpp
+│   ├── Auxiliar.cpp
+│   ├── Sequencial.cpp
+│   ├── ParaleloThreads.cpp
+│   └── ParaleloProcessos.cpp
+├── include/              # Cabeçalhos .h
+├── bin/                  # Executáveis (gerados pelo Makefile)
+├── resultados/           # Resultados das execuções (arquivos .txt)
+├── Makefile
+└── README.md
 ```
 
 ---
