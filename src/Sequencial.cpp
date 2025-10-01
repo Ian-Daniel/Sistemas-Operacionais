@@ -4,7 +4,7 @@
 #include <chrono>
 using namespace std;
 
-// Função para ler matriz de arquivo;
+// função criada para ler matriz de arquivo:
 vector<vector<int>> lerMatriz_(string nomeArquivo_)
 {
     ifstream arquivo_(nomeArquivo_);
@@ -22,7 +22,7 @@ vector<vector<int>> lerMatriz_(string nomeArquivo_)
     return matriz_;
 }
 
-// Função para multiplicar matrizes de forma sequencial;
+// outra função para multiplicar matrizes de forma sequencial:
 vector<vector<int>> multiplicar_(const vector<vector<int>> &A_, const vector<vector<int>> &B_)
 {
     int n1_ = A_.size();
@@ -36,14 +36,14 @@ vector<vector<int>> multiplicar_(const vector<vector<int>> &A_, const vector<vec
         {
             for (int k_ = 0; k_ < m1_; k_++)
             {
-                C_[i_][j_] += A_[i_][k_] * B_[k_][j_]; // Isso faz com que cada elemento seja calculado;
+                C_[i_][j_] += A_[i_][k_] * B_[k_][j_]; // isso faz com que cada elemento seja calculado.
             }
         }
     }
     return C_;
 }
 
-// Função para salvar matriz resultado em arquivo, com tempo;
+// (mais uma) função para salvar matriz resultado em arquivo, com tempo:
 void salvarResultado_(string nomeArquivo_, const vector<vector<int>> &C_, double tempoMs_)
 {
     ofstream arquivo_(nomeArquivo_);

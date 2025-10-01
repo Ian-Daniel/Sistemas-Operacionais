@@ -5,21 +5,22 @@
 #include <ctime>
 using namespace std;
 
-// Função para gerar matriz aleatória;
+// função utilizada para gerar matriz aleatória:
 vector<vector<int>> gerarMatriz_(int linhas_, int colunas_)
 {
+    // cria uma matriz (vetor de vetores) com a quantidade de linhas e colunas especificadas:
     vector<vector<int>> matriz_(linhas_, vector<int>(colunas_));
     for (int i_ = 0; i_ < linhas_; i_++)
     {
         for (int j_ = 0; j_ < colunas_; j_++)
         {
-            matriz_[i_][j_] = rand() % 10; // Neste caso, números entre 0 e 9;
+            matriz_[i_][j_] = rand() % 10; // neste caso, são aceitos apenas números entre 0 e 9.
         }
     }
     return matriz_;
 }
 
-// Função para salvar matriz em arquivo;
+// função para salvar matriz em arquivo:
 void salvarMatriz_(string nomeArquivo_, const vector<vector<int>> &matriz_)
 {
     ofstream arquivo_(nomeArquivo_);
@@ -47,10 +48,10 @@ int main(int argc_, char *argv_[])
 
     srand(time(nullptr));
 
-    int n1_ = atoi(argv_[1]);
-    int m1_ = atoi(argv_[2]);
-    int n2_ = atoi(argv_[3]);
-    int m2_ = atoi(argv_[4]);
+    int n1_ = atoi(argv_[1]); // número de linhas da primeira matriz;
+    int m1_ = atoi(argv_[2]); // número de colunas da primeira matriz;
+    int n2_ = atoi(argv_[3]); // número de linhas da segunda matriz;
+    int m2_ = atoi(argv_[4]); // número de colunas da segunda matriz.
 
     if (m1_ != n2_)
     {
