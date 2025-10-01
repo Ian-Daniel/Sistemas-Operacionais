@@ -4,42 +4,91 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <chrono>
+#include <cmath>
+
 using namespace std;
 
-// Função para processo filho calcular parte da matriz;
-void calcularParteProcesso_(int id_, int inicio_, int fim_, const vector<vector<int>>& A_, const vector<vector<int>>& B_) {
-    auto inicioTempo_ = chrono::high_resolution_clock::now();
-
-    int n1_ = A_.size();
-    int m1_ = A_[0].size();
-    int m2_ = B_[0].size();
-    vector<vector<int>> C_(n1_, vector<int>(m2_, 0));
-
-    for (int idx_ = inicio_; idx_ < fim_; idx_++) {
-        int i_ = idx_ / m2_;
-        int j_ = idx_ % m2_;
-        for (int k_ = 0; k_ < m1_; k_++) {
-            C_[i_][j_] += A_[i_][k_] * B_[k_][j_];
-        }
-    }
-
-    auto fimTempo_ = chrono::high_resolution_clock::now();
-    double tempoMs_ = chrono::duration<double, milli>(fimTempo_ - inicioTempo_).count();
-
-    // salvar resultado parcial em arquivo;
-    string nomeArq_ = "resultado_processo_" + to_string(id_) + ".txt";
-    ofstream arq_(nomeArq_);
-    arq_ << "Tempo processo " << id_ << ": " << tempoMs_ << " ms;" << endl;
-    arq_.close();
-}
-
-int main(int argc_, char* argv_[]) {
-    if (argc_ != 4) {
-        cout << "Uso: ./paralelo_processos M1.txt M2.txt P" << endl;
+int main(int argc, char* argv[]) {
+    if (argc != 4) {
+        cerr << "Uso: " << argv[0] << " <matriz1.txt> <matriz2.txt> <P>" << endl;
         return 1;
     }
 
-    // TODO: ler matrizes, dividir em blocos de tamanho P, criar processos com fork() e esperar com wait();
+    string fileA = argv[1];
+    string fileB = argv[2];
+    int P = stoi(argv[3]);
+
+    ifstream finA(fileA), finB(fileB);
+
+    int n1, m1, n2, m2;
+    finA >> n1 >> m1;
+    finB >> n2 >> m2;
+
+    if (m1 != n2) {
+        cerr << "Erro: dimensões incompatíveis!" << endl;
+        return 1;
+    }
+
+    vector<vector<int>> A(n1, vector<int>(m1));
+    vector<vector<int>> B(n2, vector<int>(m2));
+
+    for (int i = 0; i < n1; i++)
+        for (int j = 0; j < m1; j++)
+            finA >> A[i][j];
+
+    for (int i = 0; i < n2; i++)
+        for (int j = 0; j < m2; j++)
+            finB >> B[i][j];
+
+    finA.close();
+    finB.close();
+
+    int totalElements = n1 * m2;
+    int elemsPerProc = ceil((double) totalElements / P);
+
+    // Criar processos filhos
+    for (int id = 0; id < P; id++) {
+        pid_t pid = fork();
+
+        if (pid == 0) { 
+            // Processo filho
+            auto start = chrono::high_resolution_clock::now();
+
+            int startIndex = id * elemsPerProc;
+            int endIndex = min(startIndex + elemsPerProc, totalElements);
+
+            string filename = "resultado_proc_" + to_string(id) + ".txt";
+            ofstream fout(filename);
+
+            for (int idx = startIndex; idx < endIndex; idx++) {
+                int row = idx / m2;
+                int col = idx % m2;
+                int sum = 0;
+                for (int k = 0; k < m1; k++) {
+                    sum += A[row][k] * B[k][col];
+                }
+                fout << row << " " << col << " " << sum << "\n";
+            }
+
+            auto end = chrono::high_resolution_clock::now();
+            double elapsed = chrono::duration<double, milli>(end - start).count();
+            fout << "Tempo(ms): " << elapsed << endl;
+
+            fout.close();
+            _exit(0); // garante saída imediata do filho
+        }
+        else if (pid < 0) {
+            cerr << "Erro ao criar processo!" << endl;
+            return 1;
+        }
+    }
+
+    // Pai espera todos os filhos
+    for (int i = 0; i < P; i++) {
+        wait(NULL);
+    }
+
+    cout << "Execução concluída! Resultados salvos em arquivos resultado_proc_*.txt" << endl;
 
     return 0;
 }
