@@ -6,32 +6,32 @@
 using namespace std;
 
 // função utilizada para gerar matriz aleatória:
-vector<vector<int>> gerarMatriz(int linhas_, int colunas_)
+vector<vector<int>> gerarMatriz(int linhas, int colunas)
 {
     // cria uma matriz (vetor de vetores) com a quantidade de linhas e colunas especificadas:
-    vector<vector<int>> matriz(linhas_, vector<int>(colunas_));
-    for (int i_ = 0; i_ < linhas_; i_++)
+    vector<vector<int>> matriz(linhas, vector<int>(colunas));
+    for (int i = 0; i < linhas; i++)
     {
-        for (int j_ = 0; j_ < colunas_; j_++)
+        for (int j = 0; j < colunas; j++)
         {
-            matriz_[i_][j_] = rand() % 10; // neste caso, são aceitos apenas números entre 0 e 9.
+            matriz[i][j] = rand() % 10; // neste caso, são aceitos apenas números entre 0 e 9.
         }
     }
-    return matriz_;
+    return matriz;
 }
 
 // função para salvar matriz em arquivo:
 void salvarMatriz(string nomeArquivo, const vector<vector<int>> &matriz)
 {
-    ofstream arquivo(nomeArquivo_);
-    int linhas = matriz_.size();
-    int colunas = matriz_[0].size();
+    ofstream arquivo(nomeArquivo);
+    int linhas = matriz.size();
+    int colunas = matriz[0].size();
     arquivo << linhas << " " << colunas << endl;
     for (int i = 0; i < linhas; i++)
     {
-        for (int j = 0; j < colunas_; j++)
+        for (int j = 0; j < colunas; j++)
         {
-            arquivo_ << matriz[i][j] << " ";
+            arquivo << matriz[i][j] << " ";
         }
         arquivo << endl;
     }
@@ -48,12 +48,12 @@ int main(int argc, char *argv[])
 
     srand(time(nullptr));
 
-    int n1_ = atoi(argv[1]); // número de linhas da primeira matriz;
-    int m1_ = atoi(argv[2]); // número de colunas da primeira matriz;
-    int n2_ = atoi(argv[3]); // número de linhas da segunda matriz;
-    int m2_ = atoi(argv[4]); // número de colunas da segunda matriz.
+    int n1 = atoi(argv[1]); // número de linhas da primeira matriz;
+    int m1 = atoi(argv[2]); // número de colunas da primeira matriz;
+    int n2 = atoi(argv[3]); // número de linhas da segunda matriz;
+    int m2 = atoi(argv[4]); // número de colunas da segunda matriz.
 
-    if (m1_ != n2)
+    if (m1 != n2)
     {
         cout << "Multiplicação impossível: m1 deve ser igual a n2;" << endl;
         return 1;
