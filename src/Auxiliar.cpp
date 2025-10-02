@@ -6,10 +6,10 @@
 using namespace std;
 
 // função utilizada para gerar matriz aleatória:
-vector<vector<int>> gerarMatriz_(int linhas_, int colunas_)
+vector<vector<int>> gerarMatriz(int linhas_, int colunas_)
 {
     // cria uma matriz (vetor de vetores) com a quantidade de linhas e colunas especificadas:
-    vector<vector<int>> matriz_(linhas_, vector<int>(colunas_));
+    vector<vector<int>> matriz(linhas_, vector<int>(colunas_));
     for (int i_ = 0; i_ < linhas_; i_++)
     {
         for (int j_ = 0; j_ < colunas_; j_++)
@@ -21,26 +21,26 @@ vector<vector<int>> gerarMatriz_(int linhas_, int colunas_)
 }
 
 // função para salvar matriz em arquivo:
-void salvarMatriz_(string nomeArquivo_, const vector<vector<int>> &matriz_)
+void salvarMatriz(string nomeArquivo, const vector<vector<int>> &matriz)
 {
-    ofstream arquivo_(nomeArquivo_);
-    int linhas_ = matriz_.size();
-    int colunas_ = matriz_[0].size();
-    arquivo_ << linhas_ << " " << colunas_ << endl;
-    for (int i_ = 0; i_ < linhas_; i_++)
+    ofstream arquivo(nomeArquivo_);
+    int linhas = matriz_.size();
+    int colunas = matriz_[0].size();
+    arquivo << linhas << " " << colunas << endl;
+    for (int i = 0; i < linhas; i++)
     {
-        for (int j_ = 0; j_ < colunas_; j_++)
+        for (int j = 0; j < colunas_; j++)
         {
-            arquivo_ << matriz_[i_][j_] << " ";
+            arquivo_ << matriz[i][j] << " ";
         }
-        arquivo_ << endl;
+        arquivo << endl;
     }
-    arquivo_.close();
+    arquivo.close();
 }
 
-int main(int argc_, char *argv_[])
+int main(int argc, char *argv[])
 {
-    if (argc_ != 5)
+    if (argc != 5)
     {
         cout << "Uso: ./Auxiliar n1 m1 n2 m2" << endl;
         return 1;
@@ -48,22 +48,22 @@ int main(int argc_, char *argv_[])
 
     srand(time(nullptr));
 
-    int n1_ = atoi(argv_[1]); // número de linhas da primeira matriz;
-    int m1_ = atoi(argv_[2]); // número de colunas da primeira matriz;
-    int n2_ = atoi(argv_[3]); // número de linhas da segunda matriz;
-    int m2_ = atoi(argv_[4]); // número de colunas da segunda matriz.
+    int n1_ = atoi(argv[1]); // número de linhas da primeira matriz;
+    int m1_ = atoi(argv[2]); // número de colunas da primeira matriz;
+    int n2_ = atoi(argv[3]); // número de linhas da segunda matriz;
+    int m2_ = atoi(argv[4]); // número de colunas da segunda matriz.
 
-    if (m1_ != n2_)
+    if (m1_ != n2)
     {
         cout << "Multiplicação impossível: m1 deve ser igual a n2;" << endl;
         return 1;
     }
 
-    vector<vector<int>> M1_ = gerarMatriz_(n1_, m1_);
-    vector<vector<int>> M2_ = gerarMatriz_(n2_, m2_);
+    vector<vector<int>> M1 = gerarMatriz(n1, m1);
+    vector<vector<int>> M2 = gerarMatriz(n2, m2);
 
-    salvarMatriz_("M1.txt", M1_);
-    salvarMatriz_("M2.txt", M2_);
+    salvarMatriz("M1.txt", M1);
+    salvarMatriz("M2.txt", M2);
 
     cout << "Matrizes geradas e salvas em M1.txt e M2.txt;" << endl;
 

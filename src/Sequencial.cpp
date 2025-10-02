@@ -5,83 +5,83 @@
 using namespace std;
 
 // função criada para ler matriz de arquivo:
-vector<vector<int>> lerMatriz_(string nomeArquivo_)
+vector<vector<int>> lerMatriz(string nomeArquivo)
 {
-    ifstream arquivo_(nomeArquivo_);
-    int linhas_, colunas_;
-    arquivo_ >> linhas_ >> colunas_;
-    vector<vector<int>> matriz_(linhas_, vector<int>(colunas_));
-    for (int i_ = 0; i_ < linhas_; i_++)
+    ifstream arquivo(nomeArquivo);
+    int linhas, colunas;
+    arquivo >> linhas >> colunas;
+    vector<vector<int>> matriz(linhas, vector<int>(colunas));
+    for (int i = 0; i < linhas; i++)
     {
-        for (int j_ = 0; j_ < colunas_; j_++)
+        for (int j = 0; j < colunas; j++)
         {
-            arquivo_ >> matriz_[i_][j_];
+            arquivo >> matriz[i][j];
         }
     }
-    arquivo_.close();
-    return matriz_;
+    arquivo.close();
+    return matriz;
 }
 
-// outra função para multiplicar matrizes de forma sequencial:
-vector<vector<int>> multiplicar_(const vector<vector<int>> &A_, const vector<vector<int>> &B_)
+// função para multiplicar matrizes de forma sequencial:
+vector<vector<int>> multiplicar(const vector<vector<int>> &A, const vector<vector<int>> &B)
 {
-    int n1_ = A_.size();
-    int m1_ = A_[0].size();
-    int m2_ = B_[0].size();
-    vector<vector<int>> C_(n1_, vector<int>(m2_, 0));
+    int n1 = A.size();
+    int m1 = A[0].size();
+    int m2 = B[0].size();
+    vector<vector<int>> C(n1, vector<int>(m2, 0));
 
-    for (int i_ = 0; i_ < n1_; i_++)
+    for (int i = 0; i < n1; i++)
     {
-        for (int j_ = 0; j_ < m2_; j_++)
+        for (int j = 0; j < m2; j++)
         {
-            for (int k_ = 0; k_ < m1_; k_++)
+            for (int k = 0; k < m1; k++)
             {
-                C_[i_][j_] += A_[i_][k_] * B_[k_][j_]; // isso faz com que cada elemento seja calculado.
+                C[i][j] += A[i][k] * B[k][j]; // cálculo do elemento
             }
         }
     }
-    return C_;
+    return C;
 }
 
-// (mais uma) função para salvar matriz resultado em arquivo, com tempo:
-void salvarResultado_(string nomeArquivo_, const vector<vector<int>> &C_, double tempoMs_)
+// função para salvar matriz resultado em arquivo, com tempo:
+void salvarResultado(string nomeArquivo, const vector<vector<int>> &C, double tempoMs)
 {
-    ofstream arquivo_(nomeArquivo_);
-    int linhas_ = C_.size();
-    int colunas_ = C_[0].size();
-    arquivo_ << linhas_ << " " << colunas_ << endl;
-    for (int i_ = 0; i_ < linhas_; i_++)
+    ofstream arquivo(nomeArquivo);
+    int linhas = C.size();
+    int colunas = C[0].size();
+    arquivo << linhas << " " << colunas << endl;
+    for (int i = 0; i < linhas; i++)
     {
-        for (int j_ = 0; j_ < colunas_; j_++)
+        for (int j = 0; j < colunas; j++)
         {
-            arquivo_ << C_[i_][j_] << " ";
+            arquivo << C[i][j] << " ";
         }
-        arquivo_ << endl;
+        arquivo << endl;
     }
-    arquivo_ << "Tempo(ms): " << tempoMs_ << endl;
-    arquivo_.close();
+    arquivo << "Tempo(ms): " << tempoMs << endl;
+    arquivo.close();
 }
 
-int main(int argc_, char *argv_[])
+int main(int argc, char *argv[])
 {
-    if (argc_ != 4)
+    if (argc != 4)
     {
         cout << "Uso: ./Sequencial M1.txt M2.txt Resultado.txt" << endl;
         return 1;
     }
 
-    vector<vector<int>> M1_ = lerMatriz_(argv_[1]);
-    vector<vector<int>> M2_ = lerMatriz_(argv_[2]);
+    vector<vector<int>> M1 = lerMatriz(argv[1]);
+    vector<vector<int>> M2 = lerMatriz(argv[2]);
 
-    auto inicio_ = chrono::high_resolution_clock::now();
-    vector<vector<int>> C_ = multiplicar_(M1_, M2_);
-    auto fim_ = chrono::high_resolution_clock::now();
+    auto inicio = chrono::high_resolution_clock::now();
+    vector<vector<int>> C = multiplicar(M1, M2);
+    auto fim = chrono::high_resolution_clock::now();
 
-    double tempoMs_ = chrono::duration<double, milli>(fim_ - inicio_).count();
+    double tempoMs = chrono::duration<double, milli>(fim - inicio).count();
 
-    salvarResultado_(argv_[3], C_, tempoMs_);
+    salvarResultado(argv[3], C, tempoMs);
 
-    cout << "Multiplicação sequencial concluída; Tempo: " << tempoMs_ << " ms;" << endl;
+    cout << "Multiplicação sequencial concluída; Tempo: " << tempoMs << " ms;" << endl;
 
     return 0;
 }
