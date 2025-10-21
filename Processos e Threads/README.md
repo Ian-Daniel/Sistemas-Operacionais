@@ -12,12 +12,7 @@ Repositório criado com a finalidade de guardar um trabalho prático da discipli
 
 ## Descrição do projeto
 
-Este projeto tem como objetivo implementar a multiplicação de matrizes de diferentes formas, avaliando o desempenho das abordagens sequencial e paralela (threads e processos). O projeto explora conceitos de **multiprogramação**, **programação paralela** e **pthreads**, permitindo comparar tempos de execução entre as soluções.
-
-As implementações seguem rigorosamente as orientações do professor:
-
-- Todas as classes e variáveis terminam com `_`;
-- Código muito bem comentado, com comentários terminando em `;` e uso frequente de expressões como "neste caso" e "isso faz com que".  
+Este projeto tem como objetivo implementar a multiplicação de matrizes de diferentes formas, avaliando o desempenho das abordagens sequencial e paralela (threads e processos). O projeto explora conceitos de **multiprogramação**, **programação paralela** e **pthreads**, permitindo comparar tempos de execução entre as soluções.  
 
 ---
 
