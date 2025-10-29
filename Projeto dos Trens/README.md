@@ -32,18 +32,36 @@ Cada trem possui uma rota predefinida e uma **velocidade ajustável** através d
 ## Estrutura do repositório
 
 ```
-├── src/ # Códigos-fonte do projeto
-│ ├── main.cpp
-│ ├── trem.cpp
-│ ├── trem.h
-│ ├── mainwindow.cpp
-│ └── mainwindow.h
-├── ui/ # Interface gráfica (Qt)
-│ └── mainwindow.ui
-├── assets/ # Recursos visuais (imagens da malha)
-│ └── malha.png
-├── README.md
-└── ProjetoTrens.pro # Arquivo de configuração do Qt
+│
+├── README.md                          # Documentação principal do projeto (em Markdown)
+├── Trem.pro                           # Arquivo de configuração do projeto Qt
+├── LICENSE                            # Licença, se desejar abrir o projeto
+│
+├── src/                               # Códigos-fonte (.cpp)
+│   ├── main.cpp                       # Inicialização da aplicação Qt
+│   ├── mainwindow.cpp                 # Lógica principal da interface
+│   ├── trem.cpp                       # Implementação da classe Trem (movimentação e sincronização)
+│   └── regioes.cpp                    # Definição das regiões críticas, se modularizar
+│
+├── include/                           # Cabeçalhos (.h)
+│   ├── mainwindow.h                   # Declaração da classe MainWindow
+│   ├── trem.h                         # Declaração da classe Trem
+│   └── regioes.h                      # Declaração dos mutexes e funções auxiliares
+│
+├── ui/                                # Interfaces gráficas do Qt Designer
+│   └── mainwindow.ui                  # Layout principal (sliders e área gráfica)
+│
+├── build/                             # Gerado automaticamente pelo Qt Creator
+│   ├── Makefile                       # Arquivo de compilação
+│   ├── Trem                           # Executável (modo debug)
+│   └── objetos compilados (.o)
+│
+├── doc/                               # Documentação e relatórios
+│   ├── Trabalho 2 - Descrição.pdf     # Enunciado oficial do professor
+│   └── Relatorio_Trens.pdf            # Relatório de resultados ou explicações
+│
+└── video/                             # Demonstração prática
+    └── Demonstracao_Trens.mp4         # Vídeo curto (≤ 3 minutos)
 ```
 
 ## Como Compilar
