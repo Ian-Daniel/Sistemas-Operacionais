@@ -32,10 +32,8 @@ Cada trem possui uma rota predefinida e uma **velocidade ajustável** através d
 ## Estrutura do repositório
 
 ```
-│
 ├── README.md                          # Documentação principal do projeto (em Markdown)
 ├── Trem.pro                           # Arquivo de configuração do projeto Qt
-├── LICENSE                            # Licença, se desejar abrir o projeto
 │
 ├── src/                               # Códigos-fonte (.cpp)
 │   ├── main.cpp                       # Inicialização da aplicação Qt
