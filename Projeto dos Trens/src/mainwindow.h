@@ -4,10 +4,8 @@
 #include <QMainWindow>
 #include "trem.h"
 
-/* Janela principal da aplicação */:
-namespace Ui
-{
-    class MainWindow;
+namespace Ui {
+class MainWindow;
 }
 
 class MainWindow : public QMainWindow
@@ -15,15 +13,17 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0); // Construtor;
-    ~MainWindow();                            // Destrutor.
+    explicit MainWindow(QWidget *parent = 0);
+    ~MainWindow();
+
+protected:
+    // Desenha os trilhos.
+    void paintEvent(QPaintEvent *event);
 
 public slots:
-    void updateInterface(int, int, int); // Atualiza a interface;
-    void init_trem();                    // Inicializa os trens.
+    void updateInterface(int id, int x, int y);
 
 private slots:
-    // Ajuste de velocidade dos trens:
     void on_horizontalSlider_1_valueChanged(int value);
     void on_horizontalSlider_2_valueChanged(int value);
     void on_horizontalSlider_3_valueChanged(int value);
@@ -33,8 +33,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-
-    // Ponteiros para os trens:
     Trem *trem1;
     Trem *trem2;
     Trem *trem3;
@@ -43,4 +41,4 @@ private:
     Trem *trem6;
 };
 
-#endif
+#endif // MAINWINDOW_H

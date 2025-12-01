@@ -1,403 +1,204 @@
 #include "trem.h"
-#include "mainwindow.h"
 #include <QtCore>
-#include <semaphore.h>
+#include <cmath>
+#include <algorithm>
 
-// Semáforos das regiões críticas:
-extern sem_t semaforos[11];
+// Semáforos globais:
+extern sem_t semaforos[7];
 
-Trem::Trem(int ID, int x, int y, int vel)
-{
+Trem::Trem(int ID, int x, int y) {
     this->ID = ID;
     this->x = x;
     this->y = y;
-    setVel(vel); // Limita velocidade.
-}
+    this->velocidade = 100;
+    this->parado = false;
+    this->indiceAtual = 0;
 
-void Trem::run()
-{
-    while (true)
-    {
-        if (vel > 0)
-        {
-            switch (ID)
-            {
+    // Pontos da malha:
+    QPoint pTipEsq(120, 200);
+    QPoint pTopEsq(260, 60);
+    QPoint pTopDir(540, 60);
+    QPoint pTipDir(680, 200);
+    QPoint pBotDir(540, 340);
+    QPoint pBotEsq(260, 340);
+    QPoint pMidEsq(260, 200);
+    QPoint pMidDir(540, 200);
 
-            // Trem 1 (verde):
-            case 1:
-                if (x == 280 && y == 40)
-                {
-                    sem_wait(&semaforos[0]);
-                    sem_wait(&semaforos[2]);
-                    x += 10;
-                }
-                else if (x == 290 && y == 40)
-                    x += 10;
-                else if (x == 300 && y == 40)
-                    x += 10;
-                else if (x == 310 && y == 40)
-                {
-                    y += 10;
-                    sem_post(&semaforos[0]);
-                    sem_post(&semaforos[2]);
-                }
-                else if (x == 310 && y == 130)
-                {
-                    sem_wait(&semaforos[2]);
-                    y += 10;
-                }
-                else if (x == 310 && y == 140)
-                    y += 10;
-                else if (x == 310 && y == 150)
-                    y += 10;
-                else if (x == 310 && y == 160)
-                {
-                    x -= 10;
-                    sem_post(&semaforos[2]);
-                }
-                else if (y == 40 && x < 310)
-                    x += 10;
-                else if (x == 310 && y < 160)
-                    y += 10;
-                else if (x > 40 && y == 160)
-                    x -= 10;
-                else
-                    y -= 10;
-                emit updateGUI(ID, x, y, vel);
-                break;
-
-            // Trem 2 (vermelho):
-            case 2:
-                if (x == 340 && y == 160)
-                {
-                    sem_wait(&semaforos[0]);
-                    x -= 10;
-                }
-                else if (x == 330 && y == 160)
-                    x -= 10;
-                else if (x == 320 && y == 160)
-                    x -= 10;
-                else if (x == 310 && y == 160)
-                {
-                    y -= 10;
-                    sem_post(&semaforos[0]);
-                }
-                else if (x == 550 && y == 40)
-                {
-                    sem_wait(&semaforos[1]);
-                    sem_wait(&semaforos[5]);
-                    x += 10;
-                }
-                else if (x == 560 && y == 40)
-                    x += 10;
-                else if (x == 570 && y == 40)
-                    x += 10;
-                else if (x == 580 && y == 40)
-                {
-                    y += 10;
-                    sem_post(&semaforos[1]);
-                    sem_post(&semaforos[5]);
-                }
-                else if (x == 470 && y == 160)
-                {
-                    sem_wait(&semaforos[3]);
-                    x -= 10;
-                }
-                else if (x > 340 && x < 470 && y == 160)
-                    x -= 10;
-                else if (x == 340 && y == 160)
-                {
-                    y -= 10;
-                    sem_post(&semaforos[3]);
-                }
-                else if (x == 580 && y == 130)
-                {
-                    sem_wait(&semaforos[3]);
-                    sem_wait(&semaforos[4]);
-                    y += 10;
-                }
-                else if (x == 580 && y == 140)
-                    y += 10;
-                else if (x == 580 && y == 150)
-                    y += 10;
-                else if (x == 580 && y == 160)
-                {
-                    x -= 10;
-                    sem_post(&semaforos[3]);
-                    sem_post(&semaforos[4]);
-                }
-                else if (y == 40 && x < 580)
-                    x += 10;
-                else if (x == 580 && y < 160)
-                    y += 10;
-                else if (x > 310 && y == 160)
-                    x -= 10;
-                else
-                    y -= 10;
-                emit updateGUI(ID, x, y, vel);
-                break;
-
-            // Trem 3 (azul):
-            case 3:
-                if (x == 740 && y == 160)
-                {
-                    sem_wait(&semaforos[1]);
-                    sem_wait(&semaforos[5]);
-                    x -= 10;
-                }
-                else if (x > 580 && x < 740 && y == 160)
-                    x -= 10;
-                else if (x == 580 && y == 160)
-                    y -= 10;
-                else if (x == 580 && y > 140 && y < 160)
-                    y -= 10;
-                else if (x == 580 && y == 140)
-                {
-                    x += 10;
-                    sem_post(&semaforos[1]);
-                    sem_post(&semaforos[5]);
-                }
-                else if (x == 610 && y == 160)
-                {
-                    sem_wait(&semaforos[1]);
-                    x -= 10;
-                }
-                else if (x > 580 && x < 610 && y == 160)
-                    x -= 10;
-                else if (x == 580 && y == 160)
-                    y -= 10;
-                else if (x == 580 && y > 40 && y < 160)
-                    y -= 10;
-                else if (x == 580 && y == 40)
-                {
-                    x += 10;
-                    sem_post(&semaforos[1]);
-                }
-                else if (y == 40 && x < 850)
-                    x += 10;
-                else if (x == 850 && y < 160)
-                    y += 10;
-                else if (x > 580 && y == 160)
-                    x -= 10;
-                else
-                    y -= 10;
-                emit updateGUI(ID, x, y, vel);
-                break;
-
-            // Trem 4 (laranja):
-            case 4:
-                if (x == 170 && y == 190)
-                {
-                    sem_wait(&semaforos[0]);
-                    sem_wait(&semaforos[2]);
-                    y -= 10;
-                }
-                else if (x == 170 && y > 160 && y < 190)
-                    y -= 10;
-                else if (x == 170 && y == 160)
-                    x += 10;
-                else if (x > 170 && x < 310 && y == 160)
-                    x += 10;
-                else if (x == 310 && y == 160)
-                {
-                    y += 10;
-                    sem_post(&semaforos[0]);
-                    sem_post(&semaforos[2]);
-                }
-                else if (x == 280 && y == 160)
-                {
-                    sem_wait(&semaforos[3]);
-                    sem_wait(&semaforos[4]);
-                    x += 10;
-                }
-                else if (x > 280 && x < 440 && y == 160)
-                    x += 10;
-                else if (x == 440 && y == 160)
-                    y += 10;
-                else if (x == 440 && y > 160 && y < 180)
-                    y += 10;
-                else if (x == 440 && y == 180)
-                {
-                    x -= 10;
-                    sem_post(&semaforos[3]);
-                    sem_post(&semaforos[4]);
-                }
-                else if (x == 410 && y == 160)
-                {
-                    sem_wait(&semaforos[6]);
-                    x += 10;
-                }
-                else if (x == 420 && y == 160)
-                    y += 10;
-                else if (x == 420 && y > 160 && y < 280)
-                    y += 10;
-                else if (x == 420 && y == 280)
-                {
-                    x -= 10;
-                    sem_post(&semaforos[6]);
-                }
-                else if (y == 160 && x < 440)
-                    x += 10;
-                else if (x == 440 && y < 280)
-                    y += 10;
-                else if (x > 170 && y == 280)
-                    x -= 10;
-                else
-                    y -= 10;
-                emit updateGUI(ID, x, y, vel);
-                break;
-
-            // Trem 5 (roxo):
-            case 5:
-                if (x == 440 && y == 190)
-                {
-                    sem_wait(&semaforos[4]);
-                    sem_wait(&semaforos[5]);
-                    y -= 10;
-                }
-                else if (x == 440 && y > 160 && y < 190)
-                    y -= 10;
-                else if (x == 440 && y == 160)
-                    x += 10;
-                else if (x > 440 && x < 600 && y == 160)
-                    x += 10;
-                else if (x == 600 && y == 160)
-                {
-                    y -= 10;
-                    sem_post(&semaforos[4]);
-                    sem_post(&semaforos[5]);
-                }
-                else if (x == 550 && y == 160)
-                {
-                    sem_wait(&semaforos[5]);
-                    x += 10;
-                }
-                else if (x > 550 && x < 710 && y == 160)
-                    x += 10;
-                else if (x == 710 && y == 160)
-                    y += 10;
-                else if (x == 710 && y > 160 && y < 180)
-                    y += 10;
-                else if (x == 710 && y == 180)
-                {
-                    x -= 10;
-                    sem_post(&semaforos[5]);
-                }
-                else if (x == 470 && y == 280)
-                {
-                    sem_wait(&semaforos[6]);
-                    x -= 10;
-                }
-                else if (x > 420 && x < 470 && y == 280)
-                    x -= 10;
-                else if (x == 420 && y == 280)
-                    y -= 10;
-                else if (x == 420 && y > 160 && y < 280)
-                    y -= 10;
-                else if (x == 420 && y == 160)
-                {
-                    x += 10;
-                    sem_post(&semaforos[6]);
-                }
-                else if (y == 160 && x < 710)
-                    x += 10;
-                else if (x == 710 && y < 280)
-                    y += 10;
-                else if (x > 440 && y == 280)
-                    x -= 10;
-                else
-                    y -= 10;
-                emit updateGUI(ID, x, y, vel);
-                break;
-
-            // Trem 6 (externo):
-            case 6:
-                if (x == 20 && y == 50)
-                {
-                    sem_wait(&semaforos[7]);
-                    y -= 10;
-                }
-                else if (x == 20 && y == 40)
-                    y -= 10;
-                else if (x == 20 && y == 30)
-                {
-                    y -= 10;
-                    sem_post(&semaforos[7]);
-                }
-
-                else if (y == 20 && x == 30)
-                {
-                    sem_wait(&semaforos[8]);
-                    x += 10;
-                }
-                else if (y == 20 && x >= 40 && x <= 300)
-                    x += 10;
-                else if (y == 20 && x == 310)
-                {
-                    x += 10;
-                    sem_post(&semaforos[8]);
-                }
-
-                else if (x == 870 && y == 50)
-                {
-                    sem_wait(&semaforos[9]);
-                    y += 10;
-                }
-                else if (x == 870 && y == 60)
-                    y += 10;
-                else if (x == 870 && y == 150)
-                {
-                    y += 10;
-                    sem_post(&semaforos[9]);
-                }
-
-                else if (y == 300 && x == 320)
-                {
-                    sem_wait(&semaforos[10]);
-                    x -= 10;
-                }
-                else if (y == 300 && x <= 310 && x >= 50)
-                    x -= 10;
-                else if (y == 300 && x == 40)
-                {
-                    x -= 10;
-                    sem_post(&semaforos[10]);
-                }
-
-                else if (x == 20 && y > 20)
-                    y -= 10;
-                else if (y == 20 && x < 870)
-                    x += 10;
-                else if (x == 870 && y < 300)
-                    y += 10;
-                else if (y == 300 && x > 20)
-                    x -= 10;
-
-                emit updateGUI(ID, x, y, vel);
-                break;
-            }
-
-            msleep(200 - vel); // Controle de velocidade.
-        }
-        else
-        {
-            msleep(200); // Trem parado.
-        }
+    // Definição dos caminhos:
+    switch(ID) {
+        case 1: // Trem verde.
+            caminho << pTipEsq << pMidEsq << pTopEsq;
+            this->x = pTipEsq.x(); this->y = pTipEsq.y();
+            break;
+        case 2: // Trem vermelho.
+            caminho << pTopEsq << pMidEsq << pMidDir << pTopDir;
+            this->x = pTopEsq.x(); this->y = pTopEsq.y();
+            break;
+        case 3: // Trem azul.
+            caminho << pTopDir << pMidDir << pTipDir;
+            this->x = pTopDir.x(); this->y = pTopDir.y();
+            break;
+        case 4: // Trem laranja.
+            caminho << pTipEsq << pBotEsq << pMidEsq;
+            this->x = pTipEsq.x(); this->y = pTipEsq.y();
+            break;
+        case 5: // Trem amarelo.
+            caminho << pMidEsq << pBotEsq << pBotDir << pMidDir;
+            this->x = pMidEsq.x(); this->y = pMidEsq.y();
+            break;
+        case 6: // Trem roxo.
+            caminho << pMidDir << pBotDir << pTipDir;
+            this->x = pBotDir.x(); this->y = pBotDir.y();
+            break;
     }
 }
 
-void Trem::setVel(int value)
-{
-    if (value < 0)
-        vel = 0;
-    else if (value > 200)
-        vel = 200;
-    else
-        vel = value;
+Trem::~Trem() {
+    stop();
+    wait();
 }
 
-int Trem::getX() { return x; }
-void Trem::setX(int x) { this->x = x; }
+void Trem::setVelocidade(int vel) {
+    this->velocidade = vel;
+}
 
-int Trem::getY() { return y; }
-void Trem::setY(int y) { this->y = y; }
+void Trem::stop() {
+    parado = true;
+}
+
+int Trem::obterRegiaoCritica(int i1, int i2) {
+    QPoint p1 = caminho[i1];
+    QPoint p2 = caminho[i2];
+
+    // Região 0.
+    if ((p1.x() == 260 && p2.x() == 260) && ((p1.y() == 60 && p2.y() == 200) || (p1.y() == 200 && p2.y() == 60))) return 0;
+    // Região 1.
+    if ((p1.x() == 540 && p2.x() == 540) && ((p1.y() == 60 && p2.y() == 200) || (p1.y() == 200 && p2.y() == 60))) return 1;
+    // Região 2.
+    if ((p1.y() == 200 && p2.y() == 200) && ((p1.x() == 120 && p2.x() == 260) || (p1.x() == 260 && p2.x() == 120))) return 2;
+    // Região 3.
+    if ((p1.y() == 200 && p2.y() == 200) && ((p1.x() == 260 && p2.x() == 540) || (p1.x() == 540 && p2.x() == 260))) return 3;
+    // Região 4.
+    if ((p1.y() == 200 && p2.y() == 200) && ((p1.x() == 540 && p2.x() == 680) || (p1.x() == 680 && p2.x() == 540))) return 4;
+    // Região 5.
+    if ((p1.x() == 260 && p2.x() == 260) && ((p1.y() == 200 && p2.y() == 340) || (p1.y() == 340 && p2.y() == 200))) return 5;
+    // Região 6.
+    if ((p1.x() == 540 && p2.x() == 540) && ((p1.y() == 200 && p2.y() == 340) || (p1.y() == 340 && p2.y() == 200))) return 6;
+
+    return -1; // Livre.
+}
+
+int Trem::calcularSleep() {
+    if (velocidade == 0) return 100;
+    int sleep = 200 - velocidade;
+    return (sleep < 10) ? 10 : sleep;
+}
+
+void Trem::run() {
+    if (caminho.isEmpty()) return;
+
+    // Reserva inicial:
+    int proximo = (indiceAtual + 1) % caminho.size();
+    int regiaoInicial = obterRegiaoCritica(indiceAtual, proximo);
+    if (regiaoInicial != -1) {
+        sem_wait(&semaforos[regiaoInicial]);
+        regioesAlocadas.append(regiaoInicial);
+    }
+
+    const int DISTANCIA_FRENAGEM = 60;
+
+    while (!parado) {
+        while (velocidade == 0 && !parado) { msleep(100); }
+        if (parado) break;
+
+        int proximoIndice = (indiceAtual + 1) % caminho.size();
+        QPoint alvo = caminho[proximoIndice];
+
+        // Look-ahead de regiões:
+        int indiceFuturo = (proximoIndice + 1) % caminho.size();
+        int regiaoAtual = obterRegiaoCritica(indiceAtual, proximoIndice);
+        int regiaoFutura = obterRegiaoCritica(proximoIndice, indiceFuturo);
+
+        bool podeMover = true;
+
+        while ((x != alvo.x() || y != alvo.y()) && !parado) {
+            
+            int dx = alvo.x() - x;
+            int dy = alvo.y() - y;
+            double distancia = std::sqrt(dx*dx + dy*dy);
+            // Reserva dupla para regiões críticas específicas.
+
+            if (distancia <= DISTANCIA_FRENAGEM) {
+                if (regiaoFutura != -1 && !regioesAlocadas.contains(regiaoFutura)) {
+                    
+                    bool precisaCombo = false;
+                    // T2 → região 3 exige 1.
+                    if (ID == 2 && regiaoFutura == 3) precisaCombo = true;
+                    // T3 → região 1 exige 4.
+                    if (ID == 3 && regiaoFutura == 1) precisaCombo = true;
+                    // T5 → região 6 exige 3.
+                    if (ID == 5 && regiaoFutura == 6) precisaCombo = true;
+                    // T6 → região 4 exige 6.
+                    if (ID == 6 && regiaoFutura == 4) precisaCombo = true;
+
+                    if (precisaCombo) {
+               
+                        int indiceAposFuturo = (indiceFuturo + 1) % caminho.size();
+                        int regiaoDepoisDaFutura = obterRegiaoCritica(indiceFuturo, indiceAposFuturo);
+                        
+                        // Tentativa de reserva dupla:
+                        if (sem_trywait(&semaforos[regiaoFutura]) == 0) {
+                            if (sem_trywait(&semaforos[regiaoDepoisDaFutura]) == 0) {
+                                regioesAlocadas.append(regiaoFutura);
+                                regioesAlocadas.append(regiaoDepoisDaFutura);
+                            } else {
+                                sem_post(&semaforos[regiaoFutura]);
+                                podeMover = false;
+                            }
+                        } else {
+                            podeMover = false;
+                        }
+                    } else {
+                        // Reserva simples:
+                        if (sem_trywait(&semaforos[regiaoFutura]) == 0) {
+                            regioesAlocadas.append(regiaoFutura);
+                        } else {
+                            podeMover = false;
+                        }
+                    }
+                }
+            }
+
+            if (!podeMover) {
+                msleep(10); // Reduz velocidade na espera.
+                podeMover = true;
+                continue; 
+            }
+
+            moverPara(alvo.x(), alvo.y());
+            emit updateGUI(ID, x, y);
+            msleep(calcularSleep());
+        }
+
+        // Liberação da região anterior:
+        if (regiaoAtual != -1) {
+            sem_post(&semaforos[regiaoAtual]);
+            regioesAlocadas.removeAll(regiaoAtual);
+        }
+
+        indiceAtual = proximoIndice;
+    }
+
+    for(int r : regioesAlocadas) {
+        sem_post(&semaforos[r]);
+    }
+}
+
+void Trem::moverPara(int targetX, int targetY) {
+    int step = 2;
+    if (x < targetX) x += std::min(step, targetX - x);
+    else if (x > targetX) x -= std::min(step, x - targetX);
+    
+    if (y < targetY) y += std::min(step, targetY - y);
+    else if (y > targetY) y -= std::min(step, targetY - y);
+}

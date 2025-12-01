@@ -2,30 +2,40 @@
 #define TREM_H
 
 #include <QThread>
+#include <QVector>
+#include <QPoint>
+#include <semaphore.h>
 
-// Thread que representa um trem:
-class Trem : public QThread
-{
+class Trem : public QThread {
     Q_OBJECT
-
 public:
-    Trem(int ID, int x, int y, int vel); // Construtor;
-    void run() override;                 // Loop da thread.
-
-    void setVel(int value);
-    void setX(int x);
-    void setY(int y);
-    int getX();
-    int getY();
+    Trem(int ID, int x, int y);
+    ~Trem();
+    void run();
+    void setVelocidade(int vel);
+    void stop();
 
 signals:
-    void updateGUI(int ID, int x, int y, int vel); // Atualização da interface.
+    void updateGUI(int ID, int x, int y);
 
 private:
-    int x;   // Posição X;
-    int y;   // Posição Y;
-    int ID;  // Identificador;
-    int vel; // Velocidade.
+    int x;
+    int y;
+    int ID;
+    int velocidade;
+    bool parado;
+    
+    // Caminho do trem:
+    QVector<QPoint> caminho;
+    int indiceAtual;
+
+    // Regiões críticas alocadas:
+    QVector<int> regioesAlocadas;
+
+    // Métodos auxiliares:
+    void moverPara(int targetX, int targetY);
+    int obterRegiaoCritica(int indiceDe, int indicePara);
+    int calcularSleep();
 };
 
-#endif
+#endif // TREM_H

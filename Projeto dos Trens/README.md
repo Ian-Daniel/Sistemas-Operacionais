@@ -27,7 +27,6 @@ Este projeto implementa uma simulação de malha ferroviária composta por seis 
 │   ├── trem.h                # Declaração da classe Trem;
 │   ├── trem.cpp              # Implementação da classe Trem;
 │   └── Trem.pro              # Arquivo de projeto Qt;
-├── bin/                      # Executáveis (quando aplicável).
 └── README.md
 ```
 
