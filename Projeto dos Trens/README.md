@@ -43,7 +43,8 @@ make
 
 ## Como executar
 
-```./Trem
+```
+./Trem
 ```
 
 A aplicação inicia automaticamente a execução dos seis trens e disponibiliza sliders individuais para controle de velocidade, variando de 0 (parado) a 200 (máxima velocidade).
@@ -56,7 +57,7 @@ O sistema utiliza sete mutexes correspondentes às regiões críticas mínimas e
 
 * Liberação imediata da região após a travessia;
 
-*Verificação prévia de disponibilidade antes de entrar em uma área crítica;
+* Verificação prévia de disponibilidade antes de entrar em uma área crítica;
 
 * Execução totalmente assíncrona: cada trem opera de forma independente, sem sincronizações artificiais.
 
