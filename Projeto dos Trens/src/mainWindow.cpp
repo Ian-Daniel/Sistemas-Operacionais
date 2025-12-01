@@ -1,104 +1,133 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include <semaphore.h>
-#include <QPainter>
-#include <QPen>
+#include "railwaywidget.h"
+#include "train.h"
+#include "railwaynetwork.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QSlider>
+#include <QLabel>
+#include <QTimer>
+#include <QGroupBox>
+#include <QSizePolicy>
+#include <QGridLayout>
 
-sem_t semaforos[7];
-
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent), m_network(new RailwayNetwork())
 {
-    ui->setupUi(this);
+    setupUI();
+    setupTrains();
 
-    // Inicializa semáforos:
-    for(int i = 0; i < 7; i++){
-        sem_init(&semaforos[i], 0, 1);
+    // Atualiza posições e cores dos trens em tempo real.
+    m_updateTimer = new QTimer(this);
+    connect(m_updateTimer, &QTimer::timeout, this, [this]() {
+        QVector<QPoint> positions;
+        QVector<QColor> colors;
+
+        for (Train* train : m_trains) {
+            positions.append(train->getPosition());
+            colors.append(train->getColor());
+        }
+
+        m_railwayWidget->setTrainPositions(positions);
+        m_railwayWidget->setTrainColors(colors);
+    });
+
+    m_updateTimer->start(16);
+}
+
+MainWindow::~MainWindow() {
+    // Finaliza e libera cada trem antes de encerrar.
+    for (Train* train : m_trains) {
+        train->stopTrain();
+        train->wait();
+        delete train;
+    }
+    delete m_network;
+}
+
+void MainWindow::setupUI() {
+    setWindowTitle("Simulação de Trens");
+    setMinimumSize(1000, 500);
+
+    QWidget* centralWidget = new QWidget(this);
+    setCentralWidget(centralWidget);
+
+    // Layout principal: trilhos à esquerda, controles à direita.
+    QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
+
+    // Área de visualização dos trilhos.
+    m_railwayWidget = new RailwayWidget(this);
+    m_railwayWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    mainLayout->addWidget(m_railwayWidget);
+
+    // Painel lateral de controle de velocidade.
+    QGroupBox* controlsGroup = new QGroupBox("Controle de Velocidade", this);
+    controlsGroup->setFixedWidth(250);
+
+    QVBoxLayout* controlsLayout = new QVBoxLayout(controlsGroup);
+
+    // Seis controles (um por trem).
+    for (int i = 0; i < 6; ++i) {
+        QWidget* trainControl = new QWidget(this);
+        QVBoxLayout* trainLayout = new QVBoxLayout(trainControl);
+        trainLayout->setContentsMargins(0, 5, 0, 5);
+
+        QString colorName;
+        switch (i) {
+            case 0: colorName = "Verde";    break;
+            case 1: colorName = "Vermelho"; break;
+            case 2: colorName = "Azul";     break;
+            case 3: colorName = "Laranja";  break;
+            case 4: colorName = "Amarelo";  break;
+            case 5: colorName = "Roxo";     break;
+        }
+
+        QLabel* label = new QLabel(QString("Trem %1 (%2)").arg(i).arg(colorName), this);
+        QFont font = label->font();
+        font.setBold(true);
+        label->setFont(font);
+
+        QSlider* slider = new QSlider(Qt::Horizontal, this);
+        slider->setMinimum(0);
+        slider->setMaximum(200);
+        slider->setValue(100);
+
+        m_speedSliders.append(slider);
+        m_speedLabels.append(label);
+
+        connect(slider, &QSlider::valueChanged, this, [this, i](int value) {
+            if (i < m_trains.size()) {
+                m_trains[i]->setSpeed(value);
+            }
+        });
+
+        trainLayout->addWidget(label);
+        trainLayout->addWidget(slider);
+        controlsLayout->addWidget(trainControl);
     }
 
-    trem1 = new Trem(1, 0, 0);
-    trem2 = new Trem(2, 0, 0);
-    trem3 = new Trem(3, 0, 0);
-    trem4 = new Trem(4, 0, 0);
-    trem5 = new Trem(5, 0, 0);
-    trem6 = new Trem(6, 0, 0);
-
-    // Conecta sinais:
-    connect(trem1, SIGNAL(updateGUI(int,int,int)), SLOT(updateInterface(int,int,int)));
-    connect(trem2, SIGNAL(updateGUI(int,int,int)), SLOT(updateInterface(int,int,int)));
-    connect(trem3, SIGNAL(updateGUI(int,int,int)), SLOT(updateInterface(int,int,int)));
-    connect(trem4, SIGNAL(updateGUI(int,int,int)), SLOT(updateInterface(int,int,int)));
-    connect(trem5, SIGNAL(updateGUI(int,int,int)), SLOT(updateInterface(int,int,int)));
-    connect(trem6, SIGNAL(updateGUI(int,int,int)), SLOT(updateInterface(int,int,int)));
-
-    // Inicia os trens:
-    trem1->start();
-    trem2->start();
-    trem3->start();
-    trem4->start();
-    trem5->start();
-    trem6->start();
+    controlsLayout->addStretch();
+    mainLayout->addWidget(controlsGroup);
 }
 
-MainWindow::~MainWindow()
-{
-    // Encerra trens:
-    trem1->stop(); trem2->stop(); trem3->stop();
-    trem4->stop(); trem5->stop(); trem6->stop();
-    
-    trem1->wait(); trem2->wait(); trem3->wait();
-    trem4->wait(); trem5->wait(); trem6->wait();
-
-    delete trem1; delete trem2; delete trem3;
-    delete trem4; delete trem5; delete trem6;
-
-    // Destrói semáforos:
-    for(int i = 0; i < 7; i++){
-        sem_destroy(&semaforos[i]);
-    }
-
-    delete ui;
-}
-
-void MainWindow::paintEvent(QPaintEvent *event) {
-    Q_UNUSED(event);
-
-    // Desenha trilhos:
-    QPainter painter(this);
-    QPen pen;
-    pen.setWidth(8);
-    pen.setColor(Qt::black);
-    painter.setPen(pen);
-
-    painter.drawLine(260, 60, 540, 60);
-    painter.drawLine(260, 200, 540, 200);
-    painter.drawLine(260, 340, 540, 340);
-    painter.drawLine(260, 60, 260, 340);
-    painter.drawLine(540, 60, 540, 340);
-    painter.drawLine(120, 200, 260, 60);
-    painter.drawLine(120, 200, 260, 340);
-    painter.drawLine(540, 60, 680, 200);
-    painter.drawLine(540, 340, 680, 200);
-    painter.drawLine(120, 200, 260, 200);
-    painter.drawLine(540, 200, 680, 200);
-}
-
-void MainWindow::updateInterface(int id, int x, int y){
-    // Atualiza posição do trem:
-    switch(id){
-        case 1: ui->label_trem1->setGeometry(x-10, y-10, 20, 20); break;
-        case 2: ui->label_trem2->setGeometry(x-10, y-10, 20, 20); break;
-        case 3: ui->label_trem3->setGeometry(x-10, y-10, 20, 20); break;
-        case 4: ui->label_trem4->setGeometry(x-10, y-10, 20, 20); break;
-        case 5: ui->label_trem5->setGeometry(x-10, y-10, 20, 20); break;
-        case 6: ui->label_trem6->setGeometry(x-10, y-10, 20, 20); break;
+void MainWindow::setupTrains() {
+    // Cria e inicia os trens.
+    for (int i = 0; i < 6; ++i) {
+        Train* train = new Train(i, m_network, this);
+        connect(train, &Train::positionChanged, this, &MainWindow::onTrainPositionChanged);
+        m_trains.append(train);
+        train->start();
     }
 }
 
-void MainWindow::on_horizontalSlider_1_valueChanged(int value){ trem1->setVelocidade(value); }
-void MainWindow::on_horizontalSlider_2_valueChanged(int value){ trem2->setVelocidade(value); }
-void MainWindow::on_horizontalSlider_3_valueChanged(int value){ trem3->setVelocidade(value); }
-void MainWindow::on_horizontalSlider_4_valueChanged(int value){ trem4->setVelocidade(value); }
-void MainWindow::on_horizontalSlider_5_valueChanged(int value){ trem5->setVelocidade(value); }
-void MainWindow::on_horizontalSlider_6_valueChanged(int value){ trem6->setVelocidade(value); }
+void MainWindow::onTrainSpeedChanged(int trainId, int speed) {
+    if (trainId >= 0 && trainId < m_trains.size()) {
+        m_trains[trainId]->setSpeed(speed);
+    }
+}
+
+void MainWindow::onTrainPositionChanged(int trainId, int x, int y) {
+    Q_UNUSED(trainId);
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+}

@@ -1,204 +1,266 @@
-#include "trem.h"
-#include <QtCore>
+#include "train.h"
+#include "railwaynetwork.h"
+#include "uiLayout.h"
+#include <QDebug>
+#include <QMutexLocker>
+#include <vector>
 #include <cmath>
 #include <algorithm>
 
-// Semáforos globais:
-extern sem_t semaforos[7];
+Train::Train(int id, RailwayNetwork* network, QObject* parent)
+    : QThread(parent)
+    , m_id(id)
+    , m_network(network)
+    , m_speed(100)
+    , m_running(true)
+    , m_currentPathIndex(0)
+    , m_heldRegions()
+{
+    using namespace Layout;
 
-Trem::Trem(int ID, int x, int y) {
-    this->ID = ID;
-    this->x = x;
-    this->y = y;
-    this->velocidade = 100;
-    this->parado = false;
-    this->indiceAtual = 0;
+    // Caminhos definidos em sentido anti-horário:
+    switch(id) {
+        case 0: // Verde:
+            m_x = P_TipLeft.x(); m_y = P_TipLeft.y();
+            m_path = { {P_TipLeft.x(), P_TipLeft.y()}, {P_MidLeft.x(), P_MidLeft.y()}, {P_TopLeft.x(), P_TopLeft.y()} };
+            break;
 
-    // Pontos da malha:
-    QPoint pTipEsq(120, 200);
-    QPoint pTopEsq(260, 60);
-    QPoint pTopDir(540, 60);
-    QPoint pTipDir(680, 200);
-    QPoint pBotDir(540, 340);
-    QPoint pBotEsq(260, 340);
-    QPoint pMidEsq(260, 200);
-    QPoint pMidDir(540, 200);
+        case 1: // Vermelho:
+            m_x = P_TopLeft.x(); m_y = P_TopLeft.y();
+            m_path = { {P_TopLeft.x(), P_TopLeft.y()}, {P_MidLeft.x(), P_MidLeft.y()}, {P_MidRight.x(), P_MidRight.y()}, {P_TopRight.x(), P_TopRight.y()} };
+            break;
 
-    // Definição dos caminhos:
-    switch(ID) {
-        case 1: // Trem verde.
-            caminho << pTipEsq << pMidEsq << pTopEsq;
-            this->x = pTipEsq.x(); this->y = pTipEsq.y();
+        case 2: // Azul:
+            m_x = P_TopRight.x(); m_y = P_TopRight.y();
+            m_path = { {P_TopRight.x(), P_TopRight.y()}, {P_MidRight.x(), P_MidRight.y()}, {P_TipRight.x(), P_TipRight.y()} };
             break;
-        case 2: // Trem vermelho.
-            caminho << pTopEsq << pMidEsq << pMidDir << pTopDir;
-            this->x = pTopEsq.x(); this->y = pTopEsq.y();
+
+        case 3: // Laranja:
+            m_x = P_TipLeft.x(); m_y = P_TipLeft.y();
+            m_path = { {P_TipLeft.x(), P_TipLeft.y()}, {P_BotLeft.x(), P_BotLeft.y()}, {P_MidLeft.x(), P_MidLeft.y()} };
             break;
-        case 3: // Trem azul.
-            caminho << pTopDir << pMidDir << pTipDir;
-            this->x = pTopDir.x(); this->y = pTopDir.y();
+
+        case 4: // Amarelo:
+            m_x = P_BotLeft.x(); m_y = P_BotLeft.y();
+            m_path = { {P_BotLeft.x(), P_BotLeft.y()}, {P_BotRight.x(), P_BotRight.y()}, {P_MidRight.x(), P_MidRight.y()}, {P_MidLeft.x(), P_MidLeft.y()} };
             break;
-        case 4: // Trem laranja.
-            caminho << pTipEsq << pBotEsq << pMidEsq;
-            this->x = pTipEsq.x(); this->y = pTipEsq.y();
+
+        case 5: // Roxo:
+            m_x = P_BotRight.x(); m_y = P_BotRight.y();
+            m_path = { {P_BotRight.x(), P_BotRight.y()}, {P_TipRight.x(), P_TipRight.y()}, {P_MidRight.x(), P_MidRight.y()} };
             break;
-        case 5: // Trem amarelo.
-            caminho << pMidEsq << pBotEsq << pBotDir << pMidDir;
-            this->x = pMidEsq.x(); this->y = pMidEsq.y();
-            break;
-        case 6: // Trem roxo.
-            caminho << pMidDir << pBotDir << pTipDir;
-            this->x = pBotDir.x(); this->y = pBotDir.y();
+
+        default:
+            m_x = 0; m_y = 0;
             break;
     }
 }
 
-Trem::~Trem() {
-    stop();
+Train::~Train() {
+    stopTrain();
     wait();
 }
 
-void Trem::setVelocidade(int vel) {
-    this->velocidade = vel;
+void Train::setSpeed(int speed) {
+    QMutexLocker locker(&m_mutex);
+    m_speed = qBound(0, speed, 200);
 }
 
-void Trem::stop() {
-    parado = true;
+int Train::getSpeed() const {
+    QMutexLocker locker(&m_mutex);
+    return m_speed;
 }
 
-int Trem::obterRegiaoCritica(int i1, int i2) {
-    QPoint p1 = caminho[i1];
-    QPoint p2 = caminho[i2];
+int Train::getId() const { return m_id; }
 
-    // Região 0.
-    if ((p1.x() == 260 && p2.x() == 260) && ((p1.y() == 60 && p2.y() == 200) || (p1.y() == 200 && p2.y() == 60))) return 0;
-    // Região 1.
-    if ((p1.x() == 540 && p2.x() == 540) && ((p1.y() == 60 && p2.y() == 200) || (p1.y() == 200 && p2.y() == 60))) return 1;
-    // Região 2.
-    if ((p1.y() == 200 && p2.y() == 200) && ((p1.x() == 120 && p2.x() == 260) || (p1.x() == 260 && p2.x() == 120))) return 2;
-    // Região 3.
-    if ((p1.y() == 200 && p2.y() == 200) && ((p1.x() == 260 && p2.x() == 540) || (p1.x() == 540 && p2.x() == 260))) return 3;
-    // Região 4.
-    if ((p1.y() == 200 && p2.y() == 200) && ((p1.x() == 540 && p2.x() == 680) || (p1.x() == 680 && p2.x() == 540))) return 4;
-    // Região 5.
-    if ((p1.x() == 260 && p2.x() == 260) && ((p1.y() == 200 && p2.y() == 340) || (p1.y() == 340 && p2.y() == 200))) return 5;
-    // Região 6.
-    if ((p1.x() == 540 && p2.x() == 540) && ((p1.y() == 200 && p2.y() == 340) || (p1.y() == 340 && p2.y() == 200))) return 6;
-
-    return -1; // Livre.
+QPoint Train::getPosition() const {
+    QMutexLocker locker(&m_mutex);
+    return QPoint(m_x, m_y);
 }
 
-int Trem::calcularSleep() {
-    if (velocidade == 0) return 100;
-    int sleep = 200 - velocidade;
-    return (sleep < 10) ? 10 : sleep;
+QColor Train::getColor() const {
+    return m_network->getTrainColor(m_id);
 }
 
-void Trem::run() {
-    if (caminho.isEmpty()) return;
+void Train::stopTrain() {
+    QMutexLocker locker(&m_mutex);
+    m_running = false;
+}
 
-    // Reserva inicial:
-    int proximo = (indiceAtual + 1) % caminho.size();
-    int regiaoInicial = obterRegiaoCritica(indiceAtual, proximo);
-    if (regiaoInicial != -1) {
-        sem_wait(&semaforos[regiaoInicial]);
-        regioesAlocadas.append(regiaoInicial);
+int mapSpeedToSleep(int speed) {
+    return 200 - (speed * 198 / 200);
+}
+
+void moveTowards(int& x, int& y, int tx, int ty, int step) {
+    int dx = tx - x;
+    int dy = ty - y;
+    double dist = std::sqrt(static_cast<double>(dx * dx + dy * dy));
+
+    if (dist <= step) {
+        x = tx;
+        y = ty;
+    } else {
+        x += static_cast<int>((dx * step) / dist);
+        y += static_cast<int>((dy * step) / dist);
     }
+}
 
-    const int DISTANCIA_FRENAGEM = 60;
+// Retorna regiões críticas necessárias para o próximo segmento:
+std::vector<int> Train::getRequirementsForNextSegment(int targetIndex) {
+    if (m_path.empty()) return {};
 
-    while (!parado) {
-        while (velocidade == 0 && !parado) { msleep(100); }
-        if (parado) break;
+    int size = static_cast<int>(m_path.size());
+    int prev = (targetIndex - 1 + size) % size;
 
-        int proximoIndice = (indiceAtual + 1) % caminho.size();
-        QPoint alvo = caminho[proximoIndice];
+    // Mapeamento de regiões críticas (Figura de referência):
+    switch(m_id) {
+        case 0: // Verde:
+            if (prev == 0 && targetIndex == 1) return {2};
+            if (prev == 1 && targetIndex == 2) return {0};
+            break;
 
-        // Look-ahead de regiões:
-        int indiceFuturo = (proximoIndice + 1) % caminho.size();
-        int regiaoAtual = obterRegiaoCritica(indiceAtual, proximoIndice);
-        int regiaoFutura = obterRegiaoCritica(proximoIndice, indiceFuturo);
+        case 1: // Vermelho:
+            if (prev == 0 && targetIndex == 1) return {0};
+            if (prev == 1 && targetIndex == 2) return {3};
+            if (prev == 2 && targetIndex == 3) return {1};
+            break;
 
-        bool podeMover = true;
+        case 2: // Azul:
+            if (prev == 0 && targetIndex == 1) return {1};
+            if (prev == 1 && targetIndex == 2) return {4};
+            break;
 
-        while ((x != alvo.x() || y != alvo.y()) && !parado) {
-            
-            int dx = alvo.x() - x;
-            int dy = alvo.y() - y;
-            double distancia = std::sqrt(dx*dx + dy*dy);
-            // Reserva dupla para regiões críticas específicas.
+        case 3: // Laranja:
+            if (prev == 1 && targetIndex == 2) return {5};
+            if (prev == 2 && targetIndex == 0) return {2};
+            break;
 
-            if (distancia <= DISTANCIA_FRENAGEM) {
-                if (regiaoFutura != -1 && !regioesAlocadas.contains(regiaoFutura)) {
-                    
-                    bool precisaCombo = false;
-                    // T2 → região 3 exige 1.
-                    if (ID == 2 && regiaoFutura == 3) precisaCombo = true;
-                    // T3 → região 1 exige 4.
-                    if (ID == 3 && regiaoFutura == 1) precisaCombo = true;
-                    // T5 → região 6 exige 3.
-                    if (ID == 5 && regiaoFutura == 6) precisaCombo = true;
-                    // T6 → região 4 exige 6.
-                    if (ID == 6 && regiaoFutura == 4) precisaCombo = true;
+        case 4: // Amarelo:
+            if (prev == 1 && targetIndex == 2) return {6};
+            if (prev == 2 && targetIndex == 3) return {3};
+            if (prev == 3 && targetIndex == 0) return {5};
+            break;
 
-                    if (precisaCombo) {
-               
-                        int indiceAposFuturo = (indiceFuturo + 1) % caminho.size();
-                        int regiaoDepoisDaFutura = obterRegiaoCritica(indiceFuturo, indiceAposFuturo);
-                        
-                        // Tentativa de reserva dupla:
-                        if (sem_trywait(&semaforos[regiaoFutura]) == 0) {
-                            if (sem_trywait(&semaforos[regiaoDepoisDaFutura]) == 0) {
-                                regioesAlocadas.append(regiaoFutura);
-                                regioesAlocadas.append(regiaoDepoisDaFutura);
-                            } else {
-                                sem_post(&semaforos[regiaoFutura]);
-                                podeMover = false;
-                            }
-                        } else {
-                            podeMover = false;
-                        }
-                    } else {
-                        // Reserva simples:
-                        if (sem_trywait(&semaforos[regiaoFutura]) == 0) {
-                            regioesAlocadas.append(regiaoFutura);
-                        } else {
-                            podeMover = false;
-                        }
-                    }
+        case 5: // Roxo:
+            if (prev == 1 && targetIndex == 2) return {4};
+            if (prev == 2 && targetIndex == 0) return {6};
+            break;
+    }
+    return {};
+}
+
+void Train::run()
+{
+    using namespace Layout;
+
+    auto acquire = [&](const std::vector<int>& regions) -> bool {
+        for (size_t i = 0; i < regions.size(); ++i) {
+            if (!m_network->tryAcquireRegion(static_cast<RailwayNetwork::CriticalRegion>(regions[i]), m_id)) {
+                for (int j = static_cast<int>(i) - 1; j >= 0; --j)
+                    m_network->releaseRegion(static_cast<RailwayNetwork::CriticalRegion>(regions[j]), m_id);
+                return false;
+            }
+        }
+        return true;
+    };
+
+    auto release = [&](int r) {
+        m_network->releaseRegion(static_cast<RailwayNetwork::CriticalRegion>(r), m_id);
+    };
+
+    std::vector<int> held;
+    const int STEP = 5;
+    const int BRAKE_DIST = 55;
+
+    while (true) {
+        {
+            QMutexLocker locker(&m_mutex);
+            if (!m_running) break;
+        }
+
+        int speed;
+        {
+            QMutexLocker locker(&m_mutex);
+            speed = m_speed;
+        }
+
+        if (speed == 0) {
+            msleep(100);
+            continue;
+        }
+
+        int x, y, idx;
+        {
+            QMutexLocker locker(&m_mutex);
+            x = m_x; y = m_y;
+            idx = m_currentPathIndex;
+        }
+
+        int tx = m_path[idx].first;
+        int ty = m_path[idx].second;
+
+        int dx = tx - x;
+        int dy = ty - y;
+        double dist = std::sqrt(static_cast<double>(dx * dx + dy * dy));
+
+        // Verificação antecipada de regiões críticas:
+        if (dist <= BRAKE_DIST) {
+            int next = (idx + 1) % static_cast<int>(m_path.size());
+            auto required = getRequirementsForNextSegment(next);
+
+            std::vector<int> missing;
+            for (int r : required)
+                if (std::find(held.begin(), held.end(), r) == held.end())
+                    missing.push_back(r);
+
+            if (!missing.empty()) {
+                if (acquire(missing))
+                    held.insert(held.end(), missing.begin(), missing.end());
+                else {
+                    msleep(10);
+                    continue;
                 }
             }
+        }
 
-            if (!podeMover) {
-                msleep(10); // Reduz velocidade na espera.
-                podeMover = true;
-                continue; 
+        // Chegada ao ponto-alvo:
+        if (dist <= STEP) {
+            int next = (idx + 1) % static_cast<int>(m_path.size());
+            auto required = getRequirementsForNextSegment(next);
+
+            std::vector<int> toRelease;
+            for (int r : held)
+                if (std::find(required.begin(), required.end(), r) == required.end())
+                    toRelease.push_back(r);
+
+            for (int r : toRelease) {
+                release(r);
+                held.erase(std::remove(held.begin(), held.end(), r), held.end());
             }
 
-            moverPara(alvo.x(), alvo.y());
-            emit updateGUI(ID, x, y);
-            msleep(calcularSleep());
+            {
+                QMutexLocker locker(&m_mutex);
+                m_currentPathIndex = next;
+                m_x = tx;
+                m_y = ty;
+            }
+            continue;
         }
 
-        // Liberação da região anterior:
-        if (regiaoAtual != -1) {
-            sem_post(&semaforos[regiaoAtual]);
-            regioesAlocadas.removeAll(regiaoAtual);
+        // Movimento contínuo:
+        int nx = x, ny = y;
+        moveTowards(nx, ny, tx, ty, STEP);
+
+        {
+            QMutexLocker locker(&m_mutex);
+            m_x = nx; m_y = ny;
         }
+        emit positionChanged(m_id, nx, ny);
 
-        indiceAtual = proximoIndice;
+        int sleep = mapSpeedToSleep(speed);
+        if (sleep < 5) sleep = 5;
+        msleep(sleep);
     }
 
-    for(int r : regioesAlocadas) {
-        sem_post(&semaforos[r]);
-    }
-}
-
-void Trem::moverPara(int targetX, int targetY) {
-    int step = 2;
-    if (x < targetX) x += std::min(step, targetX - x);
-    else if (x > targetX) x -= std::min(step, x - targetX);
-    
-    if (y < targetY) y += std::min(step, targetY - y);
-    else if (y > targetY) y -= std::min(step, targetY - y);
+    for (int r : held) release(r);
 }

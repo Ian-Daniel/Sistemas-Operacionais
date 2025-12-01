@@ -1,41 +1,50 @@
-#ifndef TREM_H
-#define TREM_H
+#ifndef TRAIN_H
+#define TRAIN_H
 
 #include <QThread>
-#include <QVector>
+#include <QMutex>
 #include <QPoint>
-#include <semaphore.h>
+#include <QColor>
+#include <vector>
+#include <QObject>
 
-class Trem : public QThread {
+class RailwayNetwork;
+
+class Train : public QThread
+{
     Q_OBJECT
+
 public:
-    Trem(int ID, int x, int y);
-    ~Trem();
-    void run();
-    void setVelocidade(int vel);
-    void stop();
+    Train(int id, RailwayNetwork* network, QObject* parent = nullptr);
+    ~Train();
+
+    void setSpeed(int speed);
+    int getSpeed() const;
+    int getId() const;
+    QPoint getPosition() const;
+    QColor getColor() const;
+    void stopTrain();
 
 signals:
-    void updateGUI(int ID, int x, int y);
+    void positionChanged(int trainId, int x, int y);
+
+protected:
+    void run() override;
 
 private:
-    int x;
-    int y;
-    int ID;
-    int velocidade;
-    bool parado;
+    std::vector<int> getRequirementsForNextSegment(int targetIndex);
     
-    // Caminho do trem:
-    QVector<QPoint> caminho;
-    int indiceAtual;
-
-    // Regiões críticas alocadas:
-    QVector<int> regioesAlocadas;
-
-    // Métodos auxiliares:
-    void moverPara(int targetX, int targetY);
-    int obterRegiaoCritica(int indiceDe, int indicePara);
-    int calcularSleep();
+    int m_id;
+    RailwayNetwork* m_network;
+    
+    mutable QMutex m_mutex;
+    int m_speed;
+    bool m_running;
+    
+    int m_x, m_y;
+    std::vector<std::pair<int, int>> m_path;
+    int m_currentPathIndex;
+    std::vector<int> m_heldRegions;
 };
 
-#endif // TREM_H
+#endif

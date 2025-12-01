@@ -2,43 +2,40 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "trem.h"
+#include <QSlider>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QTimer>
+#include <QGridLayout>
+#include <QVector>
 
-namespace Ui {
-class MainWindow;
-}
+class RailwayWidget;
+class Train;
+class RailwayNetwork;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-protected:
-    // Desenha os trilhos.
-    void paintEvent(QPaintEvent *event);
-
-public slots:
-    void updateInterface(int id, int x, int y);
-
 private slots:
-    void on_horizontalSlider_1_valueChanged(int value);
-    void on_horizontalSlider_2_valueChanged(int value);
-    void on_horizontalSlider_3_valueChanged(int value);
-    void on_horizontalSlider_4_valueChanged(int value);
-    void on_horizontalSlider_5_valueChanged(int value);
-    void on_horizontalSlider_6_valueChanged(int value);
+    void onTrainSpeedChanged(int trainId, int speed);
+    void onTrainPositionChanged(int trainId, int x, int y);
 
 private:
-    Ui::MainWindow *ui;
-    Trem *trem1;
-    Trem *trem2;
-    Trem *trem3;
-    Trem *trem4;
-    Trem *trem5;
-    Trem *trem6;
+    void setupUI();
+    void setupTrains();
+
+    RailwayWidget* m_railwayWidget;
+    RailwayNetwork* m_network;
+    QVector<Train*> m_trains;
+    QVector<QSlider*> m_speedSliders;
+    QVector<QLabel*> m_speedLabels;
+    QTimer* m_updateTimer;
 };
 
-#endif // MAINWINDOW_H
+#endif
