@@ -1,133 +1,92 @@
 # IMD0036 - Sistemas Operacionais
-Repositório criado com a finalidade de guardar o **Trabalho Prático 2** da disciplina **Sistemas Operacionais**.
+Repositório criado com a finalidade de armazenar o trabalho prático da disciplina Sistemas Operacionais.
 
-# Trabalho Prático 2 – Sistemas Operacionais: Sincronização e Regiões Críticas
+# Trabalho Prático 2 – Simulação de Malha Ferroviária (Threads, Mutexes e Sincronização)
 
 ## Universidade Federal do Rio Grande do Norte – Instituto Metrópole Digital
 **Disciplina:** Sistemas Operacionais;
-**Projeto:** Controle de Trens em Malha Ferroviária (Threads, Mutexes e Semáforos);
-**Integrantes:** Ian Daniel Varela Marques; Tiago de Melo Galvão.
+**Projeto:** Simulação de Malha Ferroviária com 6 Trens (Concorrência e Exclusão Mútua);
+**Integrante:** Ian Daniel Varela Marques.
 
 ---
 
 ## Descrição do projeto
 
-Este projeto implementa uma **simulação de malha ferroviária** com **seis trens** independentes, utilizando **threads**, **mutexes** e/ou **semáforos** para o controle de **regiões críticas** e prevenção de **colisões e deadlocks**.  
-
-Cada trem possui uma rota predefinida e uma **velocidade ajustável** através de um controle deslizante (*QSlider*). O objetivo é garantir o tráfego seguro e contínuo de todos os trens, mantendo **máximo paralelismo** entre as execuções.
-
----
-
-## Objetivos
-
-- Executar cada trem em **threads independentes**, com total assincronismo.  
-- Utilizar **no mínimo 7 regiões críticas**, correspondentes aos pontos de colisão da malha.  
-- Implementar o controle de velocidade individual de cada trem (intervalo: `0–200`).  
-- Evitar **colisões** e **deadlocks** entre os trens.  
-- Fazer uso exclusivo de **mutexes e/ou semáforos** para sincronização.  
-- Garantir que os trens iniciem automaticamente ao abrir o programa.
+Este projeto implementa uma simulação de malha ferroviária composta por seis trens, cada um executado em uma thread independente. A aplicação utiliza mutexes para controle das regiões críticas da malha e aplica técnicas de sincronização a fim de evitar colisões, impasses e deadlocks. Também permite controlar a velocidade de cada trem individualmente, em conformidade com os requisitos definidos pela disciplina. 
 
 ---
 
 ## Estrutura do repositório
 
 ```
-├── README.md                          # Documentação principal do projeto (em Markdown)
-├── Trem.pro                           # Arquivo de configuração do projeto Qt
-│
-├── src/                               # Códigos-fonte (.cpp)
-│   ├── main.cpp                       # Inicialização da aplicação Qt
-│   ├── mainwindow.cpp                 # Lógica principal da interface
-│   ├── trem.cpp                       # Implementação da classe Trem (movimentação e sincronização)
-│   └── regioes.cpp                    # Definição das regiões críticas, se modularizar
-│
-├── include/                           # Cabeçalhos (.h)
-│   ├── mainwindow.h                   # Declaração da classe MainWindow
-│   ├── trem.h                         # Declaração da classe Trem
-│   └── regioes.h                      # Declaração dos mutexes e funções auxiliares
-│
-├── ui/                                # Interfaces gráficas do Qt Designer
-│   └── mainwindow.ui                  # Layout principal (sliders e área gráfica)
-│
-├── build/                             # Gerado automaticamente pelo Qt Creator
-│   ├── Makefile                       # Arquivo de compilação
-│   ├── Trem                           # Executável (modo debug)
-│   └── objetos compilados (.o)
-│
-├── doc/                               # Documentação e relatórios
-│   ├── Trabalho 2 - Descrição.pdf     # Enunciado oficial do professor
-│   └── Relatorio_Trens.pdf            # Relatório de resultados ou explicações
-│
-└── video/                             # Demonstração prática
-    └── Demonstracao_Trens.mp4         # Vídeo curto (≤ 3 minutos)
+├── src/                      # Código-fonte principal;
+│   ├── main.cpp              # Ponto de entrada da aplicação;
+│   ├── mainwindow.h          # Declaração da janela principal;
+│   ├── mainwindow.cpp        # Implementação da janela principal;
+│   ├── mainwindow.ui         # Interface gráfica (Qt Designer);
+│   ├── trem.h                # Declaração da classe Trem;
+│   ├── trem.cpp              # Implementação da classe Trem;
+│   └── Trem.pro              # Arquivo de projeto Qt;
+├── bin/                      # Executáveis (quando aplicável).
+└── README.md
 ```
 
-## Como Compilar
-
-O projeto foi desenvolvido em **C++** utilizando o **Qt Framework**.  
-Para compilar:
-
-1. Abra o projeto no **Qt Creator**.  
-2. Selecione o kit de compilação compatível (ex: *Desktop Qt 6.x GCC 64-bit*).  
-3. Clique em **Executar (Ctrl+R)** para compilar e iniciar a simulação.
-
 ---
+
+## Como compilar
+
+O projeto utiliza C++ e o Qt Framework. Para compilar, é necessário possuir o Qt 5.x (ou superior) instalado.
+
+```cd src
+qmake Trem.pro
+make
+```
 
 ## Como executar
 
-1. Ao iniciar o programa, os trens começam a se mover automaticamente.  
-2. Ajuste a velocidade de cada trem por meio dos **controles deslizantes** na interface.  
-3. Observe a simulação em diferentes composições de velocidade.  
+```./Trem
+```
 
-### Parâmetros de velocidade:
-- `0`: trem parado.  
-- `200`: velocidade máxima (movimento quase imperceptível).  
+A aplicação inicia automaticamente a execução dos seis trens e disponibiliza sliders individuais para controle de velocidade, variando de 0 (parado) a 200 (máxima velocidade).
 
----
+# Regiões críticas e sincronização
 
-## Demonstração
+O sistema utiliza sete mutexes correspondentes às regiões críticas mínimas exigidas no enunciado. Entre as principais estratégias empregadas estão:
 
-O vídeo de demonstração deve conter:
-1. Todos os trens em **velocidade mínima**.  
-2. Todos os trens em **velocidade máxima**.  
-3. Diferentes combinações de velocidades (mínimo 5 segundos por caso).  
-4. Breve explicação sobre o tratamento de **colisões e deadlocks**.
+* Uso de tryLock() com timeout para evitar deadlocks;
 
-Duração máxima: **3 minutos**.
+* Liberação imediata da região após a travessia;
 
----
+*Verificação prévia de disponibilidade antes de entrar em uma área crítica;
 
-## Avaliação
+* Execução totalmente assíncrona: cada trem opera de forma independente, sem sincronizações artificiais.
 
-Critérios de correção:
-- Ausência de colisões e deadlocks ✅  
-- Uso adequado de mutexes/semafóros ✅  
-- Implementação coerente com o enunciado ✅  
-- Interface funcional e organizada ✅  
+## Funcionalidades implementadas
 
-Pontuação:
-- **0 pts:** código inválido ou incompleto  
-- **4 pts:** sem colisões, mas com deadlocks  
-- **4–10 pts:** solução sem colisões nem deadlocks (nota proporcional à eficiência)
+* Seis threads independentes (uma por trem);
 
----
+* Controle individual de velocidade;
 
-## Referências
+* Prevenção de colisões e deadlocks;
 
-- [Documentação Qt – QThread](https://doc.qt.io/qt-6/qthread.html)  
-- [Mutexes e Semáforos em C++](https://cplusplus.com/reference/mutex/mutex/)  
-- [Conceito de Deadlock – Wikipedia](https://en.wikipedia.org/wiki/Deadlock)
+* Interface gráfica completa desenvolvida com Qt;
 
----
+* Execução automática dos trens ao iniciar o programa;
+
+* Sincronização com mutexes para cada região crítica da malha.
 
 ## Observações
 
-- O código deve estar funcional e comentado conforme as diretrizes da disciplina.  
-- A solução deve respeitar integralmente o enunciado fornecido pelo professor.  
-- O vídeo explicativo deve acompanhar o envio final no SIGAA.  
+* O projeto segue as especificações da Avaliação de Reposição da disciplina;
 
----
+* Todo o código é baseado na estrutura disponibilizada pelo professor no SIGAA;
 
-## Licença
+* A solução foi desenvolvida visando máximo paralelismo e ausência de travamentos;
 
-Este projeto é de caráter **acadêmico e didático**, desenvolvido exclusivamente para fins educacionais na UFRN – Instituto Metrópole Digital.
+* O repositório deve acompanhar vídeo explicativo e código completo na submissão oficial.
+
+## Referências
+
+* Documentação Qt – Threads e Sincronização;
+
+* Conceitos de exclusão mútua e deadlock (Sistemas Operacionais).
